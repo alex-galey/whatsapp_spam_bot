@@ -1,6 +1,16 @@
-# WhatsApp Anti-Spam Bot
+# WhatsApp Anti-Spam Bot for Kawan Community
 
-This bot monitors WhatsApp community groups for spam and investment scams.
+This bot monitors Kawan Community groups for spam and investment scams. It automatically detects all subgroups that are part of the Kawan Community and sends notifications when potential spam is detected.
+
+## Setup
+
+### Configure the bot:
+1. Copy `.env.example` to `.env`:
+   - Windows: `copy .env.example .env`
+   - macOS/Linux: `cp .env.example .env`
+2. Edit `.env` and set your phone number in `WARNING_RECIPIENT`
+   - Use international format with or without + sign
+   - Example: +31612345678 or 31612345678
 
 ## Quick Start
 

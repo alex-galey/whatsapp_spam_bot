@@ -1,4 +1,4 @@
-const { WARNING_RECIPIENT } = require('../config/constants');
+const { WARNING_RECIPIENT, COMMUNITY_ID } = require('../config/constants');
 
 async function isGroupFromCommunity(chat) {
     try {
@@ -6,24 +6,23 @@ async function isGroupFromCommunity(chat) {
         console.log('- Group name:', chat.name);
         console.log('- Is group?', chat.isGroup);
 
+        if (!COMMUNITY_ID) {
+            console.log('⚠️ No community ID configured');
+            return false;
+        }
+
         // First check if it's a group
         if (!chat.isGroup) {
             return false;
         }
 
-        // Check if the group has parent group metadata (meaning it's a subgroup)
-        if (chat.groupMetadata?.parentGroup) {
-            console.log('✅ Group is a community subgroup');
+        // Check if this group belongs to the configured community
+        if (chat.groupMetadata?.parentGroup?._serialized === COMMUNITY_ID) {
+            console.log('✅ Group is part of the monitored community');
             return true;
         }
 
-        // For main community groups
-        if (chat.isCommunity || (chat.groupMetadata && chat.groupMetadata.isCommunity)) {
-            console.log('✅ Group is a main community group');
-            return true;
-        }
-
-        console.log('❌ Not a community group');
+        console.log('❌ Not part of the monitored community');
         return false;
     } catch (error) {
         console.error('❌ Error checking community status:', error.message);

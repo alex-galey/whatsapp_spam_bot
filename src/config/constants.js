@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const WARNING_RECIPIENT = process.env.WARNING_RECIPIENT;
-const GROUP_ALLOW_REGEX = new RegExp(process.env.GROUP_ALLOW_REGEX || '.*', 'i');
+const COMMUNITY_ID = process.env.COMMUNITY_ID;
 
 const INVESTMENT_PATTERNS = [
     /(?:bitcoin|btc|eth|ethereum|crypto)\s*investment/i,
@@ -37,10 +37,10 @@ const DOMAIN_BLACKLIST = [
 const RATE_LIMIT = { messages: 5, seconds: 10 };
 
 module.exports = {
-    GROUP_ALLOW_REGEX,
     KEYWORD_BLACKLIST,
     DOMAIN_BLACKLIST,
     RATE_LIMIT,
     INVESTMENT_PATTERNS,
-    WARNING_RECIPIENT
+    WARNING_RECIPIENT,
+    COMMUNITY_ID
 };

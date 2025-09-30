@@ -12,6 +12,7 @@ const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const spamDetectionService = require('./src/services/spamDetectionService');
 const { DisciplineService } = require('./src/services/disciplineService');
+const { COMMUNITY_ID } = require('./src/config/constants');
 
 const client = new Client({
     authStrategy: new LocalAuth({ dataPath: './.wwebjs_auth' }),
@@ -21,14 +22,27 @@ const client = new Client({
     }
 });
 
+async function getCommunityName() {
+    try {
+        if (!COMMUNITY_ID) return 'Unknown Community';
+
+        const chat = await client.getChatById(COMMUNITY_ID);
+        return chat ? chat.name : 'Unknown Community';
+    } catch (error) {
+        console.error('❌ Error getting community name:', error.message);
+        return 'Unknown Community';
+    }
+}
+
 client.on('qr', qr => {
     console.log('🔄 New QR Code received. Please scan:');
     qrcode.generate(qr, { small: true });
 });
 
-client.on('ready', () => {
+client.on('ready', async () => {
     console.log('✅ Bot is ready and listening for messages');
-    console.log('👥 Monitoring all groups in Kawan Community');
+    const communityName = await getCommunityName();
+    console.log(`👥 Monitoring all groups in community: ${communityName}`);
 });
 
 client.on('loading_screen', (percent, message) => {
