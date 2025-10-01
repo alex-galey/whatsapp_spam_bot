@@ -1,9 +1,7 @@
 // Suppress punycode deprecation warning
 process.removeAllListeners('warning');
 process.on('warning', (warning) => {
-    if (warning.name === 'DeprecationWarning' && warning.message.includes('punycode')) {
-        return;
-    }
+    if (warning.name === 'DeprecationWarning' && warning.message.includes('punycode')) return;
     console.warn(warning.name, warning.message);
 });
 
@@ -22,77 +20,55 @@ const client = new Client({
     }
 });
 
+const handleError = (context, error) => {
+    console.error(`❌ Error ${context}:`, error.message);
+    if (process.env.NODE_ENV === 'development') {
+        console.error('Error details:', error);
+    }
+};
+
 async function getCommunityName() {
     try {
         if (!COMMUNITY_ID) return 'Unknown Community';
-
         const chat = await client.getChatById(COMMUNITY_ID);
-        return chat ? chat.name : 'Unknown Community';
+        return chat?.name || 'Unknown Community';
     } catch (error) {
-        console.error('❌ Error getting community name:', error.message);
+        handleError('getting community name', error);
         return 'Unknown Community';
     }
 }
 
 client.on('qr', qr => {
-    console.log('🔄 New QR Code received. Please scan:');
+    console.log('🔄 Scan QR Code to connect:');
     qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', async () => {
-    console.log('✅ Bot is ready and listening for messages');
     const communityName = await getCommunityName();
-    console.log(`👥 Monitoring all groups in community: ${communityName}`);
+    console.log(`✅ Bot is ready - Monitoring community: ${communityName}`);
 });
 
 client.on('loading_screen', (percent, message) => {
-    console.log(`🔄 Loading: ${percent}% - ${message}`);
+    if (percent % 25 === 0) console.log(`🔄 Loading: ${percent}% - ${message}`);
 });
 
-client.on('authenticated', () => {
-    console.log('🔐 Bot has been authenticated successfully');
-});
-
-client.on('auth_failure', (error) => {
-    console.error('❌ Authentication failed:', error);
-});
-
-client.on('disconnected', (reason) => {
-    console.log('📴 Bot disconnected:', reason);
-});
+client.on('authenticated', () => console.log('🔐 Authentication successful'));
+client.on('auth_failure', error => handleError('authentication', error));
+client.on('disconnected', reason => console.log('📴 Disconnected:', reason));
 
 client.on('message_create', async (msg) => {
     try {
-        if (!msg) {
-            console.log('⚠️ Received empty message event');
-            return;
-        }
+        if (!msg) return;
 
         const chat = await msg.getChat();
-        if (!chat) {
-            console.log('⚠️ Could not get chat information');
-            return;
-        }
-
         const contact = await msg.getContact();
-        if (!contact) {
-            console.log('⚠️ Could not get contact information');
-            return;
-        }
 
-        if (contact.isMe) {
-            console.log('🤖 Ignoring own message');
-            return;
-        }
+        if (!chat || !contact || contact.isMe) return;
 
         const shouldMonitor = await DisciplineService.shouldMonitorMessage(chat);
-        if (!shouldMonitor) {
-            return;
-        }
+        if (!shouldMonitor) return;
 
         const text = (msg.body || '').trim();
-        console.log(`👀 Checking message in ${chat.name}: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
-
         const spamCheck = spamDetectionService.checkMessage(
             text,
             msg.forwardingScore,
@@ -100,9 +76,6 @@ client.on('message_create', async (msg) => {
         );
 
         if (spamCheck.isSpam) {
-            console.log(`🚨 Detected ${spamCheck.isInvestmentScam ? 'investment scam' : 'spam'} message`);
-            console.log(`📝 Reason: ${spamCheck.reasons.join(', ')}`);
-
             await DisciplineService.applyDiscipline({
                 client,
                 chat,
@@ -112,8 +85,7 @@ client.on('message_create', async (msg) => {
             });
         }
     } catch (err) {
-        console.error('❌ Error processing message:', err.message);
-        console.error('Error details:', err);
+        handleError('processing message', err);
     }
 });
 
