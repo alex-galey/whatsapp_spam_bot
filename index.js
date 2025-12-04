@@ -65,8 +65,28 @@ client.on('message_create', async (msg) => {
 
         if (!chat || !contact || contact.isMe) return;
 
+        // DEBUG - Only log when COMMUNITY_ID is not set to help identify it
+        if (!COMMUNITY_ID && chat.isGroup) {
+            console.log('=== DEBUG: COMMUNITY_ID NOT SET ===');
+            console.log('Chat Name:', chat.name);
+            console.log('Chat ID:', chat.id._serialized);
+
+            if (chat.groupMetadata) {
+                if (chat.groupMetadata.parentGroup) {
+                    console.log('🏘️ COMMUNITY DETECTED - Parent Group ID:', chat.groupMetadata.parentGroup._serialized);
+                    console.log('👉 Add this to your .env file: COMMUNITY_ID=' + chat.groupMetadata.parentGroup._serialized);
+                } else {
+                    console.log('📱 REGULAR GROUP - No parent community');
+                }
+            }
+            console.log('===================================');
+        }
+
         const shouldMonitor = await DisciplineService.shouldMonitorMessage(chat);
-        if (!shouldMonitor) return;
+        if (!shouldMonitor) {
+            console.log('⏭️ Skipping message (not monitored)');
+            return;
+        }
 
         const text = (msg.body || '').trim();
         const spamCheck = spamDetectionService.checkMessage(
